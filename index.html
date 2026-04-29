@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 수학 개념 트리</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --surface2: #f0ede6;
+      --border: #e2ddd4;
+      --accent: #2d6a4f;
+      --accent2: #52b788;
+      --accent3: #95d5b2;
+      --text: #1b1b18;
+      --text-muted: #8a8778;
+      --node-1: #2d6a4f;
+      --node-2: #40916c;
+      --node-3: #52b788;
+      --node-4: #74c69d;
+      --node-5: #95d5b2;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--text); padding: 28px 40px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .header-icon { font-size: 28px; }
+    .header-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-title span { color: var(--accent3); }
+    .header-sub { font-size: 11px; color: #666; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+    main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
+    .card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
+    .api-row { display: flex; gap: 10px; align-items: center; }
+    .api-input-wrap { flex: 1; position: relative; }
+    input[type="password"], input[type="text"] {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 11px 44px 11px 14px; color: var(--text); font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--accent); }
+    .toggle-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; }
+    .api-status { font-size: 11px; font-family: 'JetBrains Mono', monospace; white-space: nowrap; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); }
+    .api-status.ok { color: var(--accent); border-color: var(--accent); }
+    .api-status.err { color: #e63946; border-color: #e63946; }
+    .concept-input-wrap { display: flex; gap: 12px; align-items: stretch; }
+    .concept-input {
+      flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
+      padding: 14px 18px; color: var(--text); font-family: 'Noto Sans KR', sans-serif;
+      font-size: 16px; font-weight: 400; outline: none; transition: border-color 0.2s;
+    }
+    .concept-input:focus { border-color: var(--accent); }
+    .concept-input::placeholder { color: var(--text-muted); }
+    .search-btn {
+      padding: 14px 28px; background: var(--accent); border: none; border-radius: 10px; color: #fff;
+      font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+    }
+    .search-btn:hover:not(:disabled) { background: #1b4332; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,106,79,0.3); }
+    .search-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .example-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .example-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+    .example-tag:hover { background: var(--accent3); border-color: var(--accent3); color: #1b4332; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-section { display: none; flex-direction: column; gap: 16px; animation: fadeUp 0.4s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .root-concept { background: var(--text); border-radius: var(--radius); padding: 20px 24px; display: flex; align-items: center; gap: 14px; }
+    .root-icon { font-size: 24px; }
+    .root-label { font-size: 11px; color: #666; font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; }
+    .root-name { font-size: 22px; font-weight: 700; color: #fff; margin-top: 2px; }
+    .root-summary { font-size: 13px; color: #aaa; margin-top: 4px; }
+    .connector { display: flex; justify-content: center; color: var(--border); font-size: 20px; margin: -4px 0; }
+    .prereq-grid { display: flex; flex-direction: column; gap: 10px; }
+    .prereq-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px;
+      cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .prereq-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+    .prereq-card:nth-child(1)::before { background: var(--node-1); }
+    .prereq-card:nth-child(2)::before { background: var(--node-2); }
+    .prereq-card:nth-child(3)::before { background: var(--node-3); }
+    .prereq-card:nth-child(4)::before { background: var(--node-4); }
+    .prereq-card:nth-child(5)::before { background: var(--node-5); }
+    .prereq-card:hover { border-color: var(--accent3); box-shadow: 0 4px 16px rgba(45,106,79,0.1); transform: translateX(4px); }
+    .prereq-card.expanded { border-color: var(--accent); background: #f0faf4; }
+    .prereq-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; margin-top: 1px; }
+    .prereq-card:nth-child(1) .prereq-num { background: var(--node-1); }
+    .prereq-card:nth-child(2) .prereq-num { background: var(--node-2); }
+    .prereq-card:nth-child(3) .prereq-num { background: var(--node-3); }
+    .prereq-card:nth-child(4) .prereq-num { background: var(--node-4); }
+    .prereq-card:nth-child(5) .prereq-num { background: var(--node-5); }
+    .prereq-content { flex: 1; }
+    .prereq-name { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .prereq-level { font-size: 11px; color: var(--text-muted); font-weight: 300; }
+    .prereq-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .prereq-arrow { font-size: 16px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; margin-top: 4px; }
+    .prereq-card.expanded .prereq-arrow { transform: rotate(90deg); }
+    .sub-prereq { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .sub-prereq.visible { display: block; }
+    .sub-prereq-label { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+    .sub-prereq-list { display: flex; flex-direction: column; gap: 8px; }
+    .sub-item { background: var(--surface2); border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6; }
+    .sub-item-name { font-weight: 500; margin-bottom: 2px; }
+    .sub-item-desc { color: var(--text-muted); font-size: 12px; }
+    .sub-loading { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); padding: 8px 0; }
+    .sub-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .error-msg { display: none; background: #fff5f5; border: 1px solid #fca5a5; border-radius: var(--radius); padding: 14px 18px; color: #e63946; font-size: 14px; }
+    .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+    footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; border-top: 1px solid var(--border); }
+    footer span { color: var(--accent); font-weight: 600; }
+    @media (max-width: 480px) {
+      .api-row, .concept-input-wrap { flex-direction: column; }
+      header { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🌳</div>
+  <div>
+    <div class="header-title">수학 개념 <span>트리 탐색기</span></div>
+    <div class="header-sub">westkong · math-concept-tree · powered by claude api</div>
+  </div>
+</header>
+
+<main>
+
+  <div class="card">
+    <div class="card-label">Claude API Key</div>
+    <div class="api-row">
+      <div class="api-input-wrap">
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
+        <button class="toggle-btn" onclick="toggleKey()">👁</button>
+      </div>
+      <div class="api-status" id="apiStatus">미입력</div>
+    </div>
+    <p class="hint">* API 키는 브라우저 내에서만 사용돼요.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-label">수학 개념 입력</div>
+    <div class="concept-input-wrap">
+      <input type="text" class="concept-input" id="conceptInput" placeholder="이해하고 싶은 수학 개념을 입력하세요" />
+      <button class="search-btn" id="searchBtn" onclick="search()">
+        <div class="spinner" id="spinner"></div>
+        <span id="btnText">탐색하기</span>
+      </button>
+    </div>
+    <div class="example-row">
+      <span class="example-tag" onclick="setExample('미분')">미분</span>
+      <span class="example-tag" onclick="setExample('로그')">로그</span>
+      <span class="example-tag" onclick="setExample('적분')">적분</span>
+      <span class="example-tag" onclick="setExample('극한')">극한</span>
+      <span class="example-tag" onclick="setExample('행렬')">행렬</span>
+      <span class="example-tag" onclick="setExample('확률')">확률</span>
+      <span class="example-tag" onclick="setExample('등차수열')">등차수열</span>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="result-section" id="resultSection">
+    <div class="root-concept">
+      <div class="root-icon">🎯</div>
+      <div>
+        <div class="root-label">목표 개념</div>
+        <div class="root-name" id="rootName"></div>
+        <div class="root-summary" id="rootSummary"></div>
+      </div>
+    </div>
+    <div class="connector">↓</div>
+    <div class="prereq-grid" id="prereqGrid"></div>
+  </div>
+
+</main>
+
+<footer>Built by <span>westkong</span> · Math Concept Tree · Powered by Claude API</footer>
+
+<script>
+  function toggleKey() {
+    const input = document.getElementById('apiKey');
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  document.getElementById('apiKey').addEventListener('input', function() {
+    const s = document.getElementById('apiStatus');
+    if (this.value.startsWith('sk-ant-')) { s.textContent = '✓ 입력됨'; s.className = 'api-status ok'; }
+    else if (this.value.length > 0) { s.textContent = '형식 오류'; s.className = 'api-status err'; }
+    else { s.textContent = '미입력'; s.className = 'api-status'; }
+  });
+
+  function setExample(c) {
+    document.getElementById('conceptInput').value = c;
+    document.getElementById('conceptInput').focus();
+  }
+
+  document.getElementById('conceptInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') search();
+  });
+
+  async function callClaude(apiKey, prompt) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `API 오류 (${res.status})`);
+    }
+    return (await res.json()).content[0].text.trim();
+  }
+
+  async function search() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const concept = document.getElementById('conceptInput').value.trim();
+    if (!apiKey.startsWith('sk-ant-')) { showError('Claude API 키를 입력해주세요.'); return; }
+    if (!concept) { showError('수학 개념을 입력해주세요.'); return; }
+
+    const btn = document.getElementById('searchBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    btn.disabled = true; spinner.style.display = 'block'; btnText.textContent = '분석 중...';
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'none';
+
+    try {
+      const prompt = `당신은 한국 고등학교 수학 교육과정 전문가입니다.
+
+"${concept}" 개념을 이해하기 위해 반드시 먼저 알아야 할 선수개념 5가지를 중요도 순으로 분석해주세요.
+
+반드시 아래 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요:
+{
+  "concept": "${concept}",
+  "summary": "${concept}이(가) 무엇인지 한 줄 설명",
+  "prerequisites": [
+    {
+      "name": "선수개념 이름",
+      "desc": "이 개념이 왜 필요한지 1~2문장 설명",
+      "level": "중1~고3 중 해당 학년"
+    }
+  ]
+}`;
+
+      const raw = await callClaude(apiKey, prompt);
+      const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      renderResult(data);
+
+    } catch (err) {
+      showError('오류: ' + err.message);
+    } finally {
+      btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = '탐색하기';
+    }
+  }
+
+  function renderResult(data) {
+    document.getElementById('rootName').textContent = data.concept;
+    document.getElementById('rootSummary').textContent = data.summary;
+    const grid = document.getElementById('prereqGrid');
+    grid.innerHTML = '';
+
+    data.prerequisites.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.className = 'prereq-card';
+      card.innerHTML = `
+        <div class="prereq-num">${i + 1}</div>
+        <div class="prereq-content">
+          <div class="prereq-name">${p.name} <span class="prereq-level">${p.level}</span></div>
+          <div class="prereq-desc">${p.desc}</div>
+          <div class="sub-prereq" id="sub-${i}">
+            <div class="sub-prereq-label">이 개념의 선수개념</div>
+            <div class="sub-prereq-list" id="subList-${i}"></div>
+          </div>
+        </div>
+        <div class="prereq-arrow">›</div>
+      `;
+      card.addEventListener('click', () => toggleSub(i, p.name, card));
+      grid.appendChild(card);
+    });
+
+    document.getElementById('resultSection').style.display = 'flex';
+  }
+
+  async function toggleSub(idx, name, card) {
+    const subEl = document.getElementById(`sub-${idx}`);
+    const subList = document.getElementById(`subList-${idx}`);
+
+    if (card.classList.contains('expanded')) {
+      card.classList.remove('expanded');
+      subEl.classList.remove('visible');
+      return;
+    }
+
+    card.classList.add('expanded');
+    subEl.classList.add('visible');
+    if (subList.dataset.loaded) return;
+
+    const apiKey = document.getElementById('apiKey').value.trim();
+    subList.innerHTML = '<div class="sub-loading"><div class="sub-spinner"></div>분석 중...</div>';
+
+    try {
+      const prompt = `당신은 한국 고등학교 수학 교육과정 전문가입니다.
+"${name}" 개념의 선수개념 3가지를 알려주세요.
+반드시 아래 JSON 형식으로만 응답하세요:
+{"prerequisites":[{"name":"개념 이름","desc":"한 줄 설명"}]}`;
+
+      const raw = await callClaude(apiKey, prompt);
+      const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      subList.innerHTML = data.prerequisites.map(p => `
+        <div class="sub-item">
+          <div class="sub-item-name">📌 ${p.name}</div>
+          <div class="sub-item-desc">${p.desc}</div>
+        </div>
+      `).join('');
+      subList.dataset.loaded = 'true';
+
+    } catch {
+      subList.innerHTML = '<div class="sub-item" style="color:#e63946">불러오기 실패. 다시 시도해주세요.</div>';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = '⚠ ' + msg; el.style.display = 'block';
+  }
+</script>
+</body>
+</html>
