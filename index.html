@@ -6,6 +6,13 @@
   <title>AI 수학 개념 트리</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+    };
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
   <style>
     :root {
       --bg: #f7f6f2;
@@ -106,69 +113,93 @@
     }
     .hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
-    /* 트리 영역 */
     .tree-container {
       flex: 1; display: none; padding: 24px;
-      overflow: auto; position: relative;
-      min-height: 500px;
+      overflow: auto; position: relative; min-height: 500px;
     }
     #treeSvg { width: 100%; height: 100%; min-height: 500px; }
 
-    /* D3 노드 스타일 */
     .node-group { cursor: pointer; }
     .node-circle {
       fill: var(--accent); stroke: #fff; stroke-width: 3;
       transition: all 0.3s; filter: drop-shadow(0 2px 6px rgba(45,106,79,0.3));
     }
     .node-circle.root { fill: var(--text); filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3)); }
-    .node-circle.loading { fill: var(--accent2); }
-    .node-circle.expandable:hover { fill: #1b4332; transform: scale(1.1); }
+    .node-circle.expandable:hover { fill: #1b4332; }
     .node-circle.leaf { fill: var(--accent3); }
+    .node-label { font-family: 'Noto Sans KR', sans-serif; font-weight: 500; fill: var(--text); font-size: 13px; }
+    .node-sublabel { font-family: 'Noto Sans KR', sans-serif; font-weight: 300; fill: var(--text-muted); font-size: 10px; }
+    .node-badge { font-family: 'JetBrains Mono', monospace; font-size: 8px; fill: #fff; font-weight: 600; }
+    .tree-link { fill: none; stroke: var(--border); stroke-width: 2; stroke-dasharray: 6,4; }
 
-    .node-label {
-      font-family: 'Noto Sans KR', sans-serif; font-weight: 500;
-      fill: var(--text); font-size: 13px;
-    }
-    .node-sublabel {
-      font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
-      fill: var(--text-muted); font-size: 10px;
-    }
-    .node-badge {
-      font-family: 'JetBrains Mono', monospace; font-size: 8px;
-      fill: #fff; font-weight: 600;
-    }
-
-    .tree-link {
-      fill: none; stroke: var(--border); stroke-width: 2;
-      stroke-dasharray: 6,4;
-    }
-
-    /* 범례 */
-    .legend {
-      display: none; justify-content: center; gap: 20px;
-      padding: 12px; flex-wrap: wrap;
-    }
+    .legend { display: none; justify-content: center; gap: 20px; padding: 12px; flex-wrap: wrap; }
     .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
     .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
 
-    /* 선택된 노드 정보 패널 */
+    /* 상세 정보 패널 */
     .info-panel {
       display: none; max-width: 860px; width: 100%;
       margin: 0 auto; padding: 0 24px 24px;
     }
     .info-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px;
+      border-radius: var(--radius); padding: 24px;
       box-shadow: 0 1px 8px rgba(0,0,0,0.05);
       animation: fadeUp 0.3s ease;
     }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    .info-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .info-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-    .info-name { font-size: 16px; font-weight: 700; }
-    .info-level { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
-    .info-desc { font-size: 14px; line-height: 1.7; color: var(--text-muted); margin-bottom: 12px; }
-    .info-hint { font-size: 12px; color: var(--accent); font-weight: 400; }
+
+    .info-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .info-name { font-size: 18px; font-weight: 700; }
+    .info-level {
+      font-size: 11px; color: #fff; background: var(--accent);
+      padding: 2px 10px; border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .info-sections { display: flex; flex-direction: column; gap: 16px; }
+
+    .info-section { }
+    .info-section-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: var(--text-muted); letter-spacing: 2px;
+      text-transform: uppercase; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .info-section-content {
+      font-size: 14px; line-height: 1.8; color: var(--text);
+      background: var(--surface2); border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .info-formula {
+      font-size: 15px; line-height: 2;
+      background: var(--text); color: #e8e6e0;
+      border-radius: 8px; padding: 16px 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .info-example {
+      font-size: 13px; line-height: 1.8; color: var(--text);
+      background: #f0faf4; border: 1px solid var(--accent3);
+      border-radius: 8px; padding: 14px 16px;
+    }
+
+    .info-loading {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--text-muted); padding: 20px 0;
+    }
+    .info-spinner {
+      width: 16px; height: 16px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .info-click-hint {
+      font-size: 13px; color: var(--accent); margin-top: 12px;
+    }
 
     footer {
       text-align: center; padding: 16px; font-size: 11px;
@@ -241,21 +272,12 @@
 </div>
 
 <div class="info-panel" id="infoPanel">
-  <div class="info-card">
-    <div class="info-header">
-      <div class="info-dot" id="infoDot"></div>
-      <div class="info-name" id="infoName"></div>
-      <div class="info-level" id="infoLevel"></div>
-    </div>
-    <div class="info-desc" id="infoDesc"></div>
-    <div class="info-hint" id="infoHint"></div>
-  </div>
+  <div class="info-card" id="infoCard"></div>
 </div>
 
 <footer>Built by <span>westkong</span> · Math Concept Tree v2 · Powered by Claude API</footer>
 
 <script>
-  // ─── 기본 UI ───
   function toggleKey() {
     const input = document.getElementById('apiKey');
     input.type = input.type === 'password' ? 'text' : 'password';
@@ -269,7 +291,6 @@
   function setExample(c) { document.getElementById('conceptInput').value = c; document.getElementById('conceptInput').focus(); }
   document.getElementById('conceptInput').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
 
-  // ─── API 호출 ───
   async function callClaude(apiKey, prompt) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -281,7 +302,7 @@
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1200,
+        max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -292,9 +313,8 @@
     return (await res.json()).content[0].text.trim();
   }
 
-  // ─── 트리 데이터 ───
   let treeData = null;
-  let selectedNode = null;
+  let detailCache = {};
 
   async function search() {
     const apiKey = document.getElementById('apiKey').value.trim();
@@ -307,6 +327,8 @@
     const btnText = document.getElementById('btnText');
     btn.disabled = true; spinner.style.display = 'block'; btnText.textContent = '분석 중...';
     document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('infoPanel').style.display = 'none';
+    detailCache = {};
 
     try {
       const prompt = `당신은 한국 고등학교 수학 교육과정 전문가입니다.
@@ -358,17 +380,14 @@
 
     const containerRect = container.getBoundingClientRect();
     const width = Math.max(containerRect.width, 700);
-    const height = Math.max(500, (countNodes(treeData)) * 55 + 100);
+    const height = Math.max(500, countNodes(treeData) * 55 + 100);
 
     svg.attr('width', width).attr('height', height);
-
-    const g = svg.append('g').attr('transform', `translate(180, 40)`);
+    const g = svg.append('g').attr('transform', 'translate(180, 40)');
 
     const root = d3.hierarchy(treeData);
-    const treeLayout = d3.tree().size([height - 80, width - 380]);
-    treeLayout(root);
+    d3.tree().size([height - 80, width - 380])(root);
 
-    // 링크
     g.selectAll('.tree-link')
       .data(root.links())
       .join('path')
@@ -378,7 +397,6 @@
       .transition().duration(600).delay((d, i) => i * 80)
       .style('opacity', 1);
 
-    // 노드 그룹
     const nodes = g.selectAll('.node-group')
       .data(root.descendants())
       .join('g')
@@ -389,7 +407,6 @@
 
     nodes.transition().duration(500).delay((d, i) => i * 100).style('opacity', 1);
 
-    // 원
     nodes.append('circle')
       .attr('class', d => {
         if (d.data.isRoot) return 'node-circle root';
@@ -398,60 +415,44 @@
       })
       .attr('r', d => d.data.isRoot ? 22 : (d.depth === 1 ? 16 : 12))
       .on('mouseover', function(event, d) {
-        if (!d.data.isRoot && !d.data.expanded) {
+        if (!d.data.isRoot && !d.data.expanded)
           d3.select(this).transition().duration(200).attr('r', d.depth === 1 ? 20 : 15);
-        }
       })
       .on('mouseout', function(event, d) {
         d3.select(this).transition().duration(200).attr('r', d.data.isRoot ? 22 : (d.depth === 1 ? 16 : 12));
       });
 
-    // 노드 순서 번호 (1단계)
     nodes.filter(d => d.depth === 1)
-      .append('text')
-      .attr('class', 'node-badge')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
+      .append('text').attr('class', 'node-badge')
+      .attr('text-anchor', 'middle').attr('dy', '0.35em')
       .text((d, i) => i + 1);
 
-    // 루트 아이콘
     nodes.filter(d => d.data.isRoot)
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .style('font-size', '16px')
-      .text('🎯');
+      .append('text').attr('text-anchor', 'middle').attr('dy', '0.35em')
+      .style('font-size', '16px').text('🎯');
 
-    // 라벨
-    nodes.append('text')
-      .attr('class', 'node-label')
+    nodes.append('text').attr('class', 'node-label')
       .attr('dy', '-0.2em')
       .attr('x', d => d.data.isRoot ? 32 : (d.children ? -24 : 24))
       .attr('text-anchor', d => d.data.isRoot ? 'start' : (d.children ? 'end' : 'start'))
       .text(d => d.data.name);
 
-    // 서브 라벨 (학년)
     nodes.filter(d => d.data.level && d.data.level !== '목표')
-      .append('text')
-      .attr('class', 'node-sublabel')
+      .append('text').attr('class', 'node-sublabel')
       .attr('dy', '1.2em')
       .attr('x', d => d.children ? -24 : 24)
       .attr('text-anchor', d => d.children ? 'end' : 'start')
       .text(d => d.data.level);
 
-    // 확장 가능 표시 (+)
     nodes.filter(d => d.depth === 1 && !d.data.expanded)
       .append('text')
-      .attr('class', 'expand-hint')
       .attr('dy', '0.35em')
       .attr('x', d => d.children ? -40 : 40)
       .attr('text-anchor', 'middle')
-      .style('font-size', '10px')
-      .style('fill', 'var(--accent2)')
+      .style('font-size', '10px').style('fill', 'var(--accent2)')
       .style('font-family', 'JetBrains Mono, monospace')
       .text('+ 클릭');
 
-    // SVG 높이 조정
     const bounds = g.node().getBBox();
     svg.attr('height', Math.max(500, bounds.height + 100));
   }
@@ -465,18 +466,13 @@
   // ─── 노드 클릭 ───
   async function onNodeClick(event, d) {
     event.stopPropagation();
-
-    // 정보 패널 표시
-    showInfoPanel(d.data);
-
-    // 루트면 무시
-    if (d.data.isRoot) return;
-
-    // 이미 확장됐으면 무시
-    if (d.data.expanded) return;
-
-    // 하위 선수개념 로드
     const apiKey = document.getElementById('apiKey').value.trim();
+
+    // 상세 정보 패널 표시
+    showDetailPanel(d.data, apiKey);
+
+    // 루트 또는 이미 확장됐으면 트리 확장 안 함
+    if (d.data.isRoot || d.data.expanded) return;
     if (!apiKey.startsWith('sk-ant-')) return;
 
     d.data.expanded = true;
@@ -491,37 +487,117 @@
       const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
       d.data.children = data.prerequisites.map(p => ({
-        name: p.name,
-        desc: p.desc,
-        level: p.level || '',
-        expanded: true
+        name: p.name, desc: p.desc, level: p.level || '', expanded: true
       }));
 
       renderTree();
-
     } catch (err) {
       d.data.expanded = false;
-      showError('하위 개념 불러오기 실패: ' + err.message);
     }
   }
 
-  // ─── 정보 패널 ───
-  function showInfoPanel(data) {
+  // ─── 상세 정보 패널 ───
+  async function showDetailPanel(data, apiKey) {
     const panel = document.getElementById('infoPanel');
-    const dot = document.getElementById('infoDot');
+    const card = document.getElementById('infoCard');
     panel.style.display = 'block';
 
-    document.getElementById('infoName').textContent = data.name;
-    document.getElementById('infoLevel').textContent = data.level || '';
-    document.getElementById('infoDesc').textContent = data.desc || data.summary || '';
-
-    if (data.isRoot) {
-      dot.style.background = 'var(--text)';
-      document.getElementById('infoHint').textContent = '아래 선수개념 노드를 클릭하여 탐색하세요';
-    } else if (!data.expanded || data.children) {
-      dot.style.background = data.children ? 'var(--accent3)' : 'var(--accent)';
-      document.getElementById('infoHint').textContent = data.children ? '' : '이 노드를 클릭하면 하위 선수개념이 펼쳐져요';
+    // 캐시 확인
+    if (detailCache[data.name]) {
+      renderDetail(data, detailCache[data.name]);
+      return;
     }
+
+    // 로딩 표시
+    card.innerHTML = `
+      <div class="info-header">
+        <div class="info-dot"></div>
+        <div class="info-name">${data.name}</div>
+        ${data.level && data.level !== '목표' ? `<div class="info-level">${data.level}</div>` : ''}
+      </div>
+      <div class="info-loading"><div class="info-spinner"></div>개념 상세 정보 불러오는 중...</div>
+    `;
+
+    if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+      card.innerHTML += '<div style="color:var(--text-muted);font-size:13px;">API 키를 입력하면 상세 설명을 볼 수 있어요.</div>';
+      return;
+    }
+
+    try {
+      const prompt = `당신은 한국 고등학교 수학 교육과정 전문가이자 수학 강사입니다.
+"${data.name}" 개념에 대해 학생이 이해할 수 있도록 설명해주세요.
+
+반드시 아래 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요:
+{
+  "definition": "이 개념이 뭔지 쉽게 2~3문장으로 설명",
+  "formula": "핵심 공식 또는 표현 (LaTeX 형식, 없으면 빈 문자열)",
+  "example": "구체적인 예시 1개 (문제와 풀이 간단하게)",
+  "tip": "학생들이 자주 헷갈리는 포인트 1가지"
+}`;
+
+      const raw = await callClaude(apiKey, prompt);
+      const detail = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      detailCache[data.name] = detail;
+      renderDetail(data, detail);
+
+    } catch (err) {
+      card.innerHTML = `
+        <div class="info-header">
+          <div class="info-dot"></div>
+          <div class="info-name">${data.name}</div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-content">${data.desc || data.summary || '상세 정보를 불러올 수 없어요.'}</div>
+        </div>
+      `;
+    }
+  }
+
+  function renderDetail(data, detail) {
+    const card = document.getElementById('infoCard');
+
+    let formulaHTML = '';
+    if (detail.formula) {
+      formulaHTML = `
+        <div class="info-section">
+          <div class="info-section-label">📐 핵심 공식</div>
+          <div class="info-formula">${detail.formula}</div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="info-header">
+        <div class="info-dot"></div>
+        <div class="info-name">${data.name}</div>
+        ${data.level && data.level !== '목표' ? `<div class="info-level">${data.level}</div>` : ''}
+      </div>
+      <div class="info-sections">
+        <div class="info-section">
+          <div class="info-section-label">📖 개념 설명</div>
+          <div class="info-section-content">${detail.definition}</div>
+        </div>
+        ${formulaHTML}
+        <div class="info-section">
+          <div class="info-section-label">✏️ 예시</div>
+          <div class="info-example">${detail.example}</div>
+        </div>
+        <div class="info-section">
+          <div class="info-section-label">💡 주의 포인트</div>
+          <div class="info-section-content">${detail.tip}</div>
+        </div>
+      </div>
+      ${!data.expanded && !data.isRoot ? '<div class="info-click-hint">↑ 트리의 이 노드를 클릭하면 하위 선수개념이 펼쳐져요</div>' : ''}
+    `;
+
+    // MathJax 렌더링
+    if (window.MathJax) {
+      MathJax.typesetPromise([card]).catch(err => console.error('MathJax:', err));
+    }
+
+    // 패널로 스크롤
+    document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function showError(msg) {
