@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 수학 개념 트리</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
   <style>
     :root {
       --bg: #f7f6f2;
@@ -16,112 +17,170 @@
       --accent3: #95d5b2;
       --text: #1b1b18;
       --text-muted: #8a8778;
-      --node-1: #2d6a4f;
-      --node-2: #40916c;
-      --node-3: #52b788;
-      --node-4: #74c69d;
-      --node-5: #95d5b2;
       --radius: 12px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg); color: var(--text);
       font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
-      min-height: 100vh;
+      min-height: 100vh; display: flex; flex-direction: column;
     }
     header {
       background: var(--text); padding: 28px 40px;
       display: flex; align-items: center; gap: 16px;
     }
     .header-icon { font-size: 28px; }
-    .header-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-title { font-size: 20px; font-weight: 700; color: #fff; }
     .header-title span { color: var(--accent3); }
     .header-sub { font-size: 11px; color: #666; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
-    main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
-    .card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
+
+    .controls {
+      max-width: 860px; width: 100%; margin: 0 auto;
+      padding: 32px 24px 0; display: flex; flex-direction: column; gap: 16px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    }
+    .card-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: var(--text-muted); letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
     .api-row { display: flex; gap: 10px; align-items: center; }
     .api-input-wrap { flex: 1; position: relative; }
     input[type="password"], input[type="text"] {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
-      padding: 11px 44px 11px 14px; color: var(--text); font-family: 'JetBrains Mono', monospace;
-      font-size: 13px; outline: none; transition: border-color 0.2s;
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 40px 10px 14px; color: var(--text);
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      outline: none; transition: border-color 0.2s;
     }
     input:focus { border-color: var(--accent); }
-    .toggle-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; }
-    .api-status { font-size: 11px; font-family: 'JetBrains Mono', monospace; white-space: nowrap; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); }
+    .toggle-btn {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px;
+    }
+    .api-status {
+      font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text-muted); white-space: nowrap;
+    }
     .api-status.ok { color: var(--accent); border-color: var(--accent); }
-    .api-status.err { color: #e63946; border-color: #e63946; }
-    .concept-input-wrap { display: flex; gap: 12px; align-items: stretch; }
+    .concept-input-wrap { display: flex; gap: 10px; }
     .concept-input {
-      flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 10px;
-      padding: 14px 18px; color: var(--text); font-family: 'Noto Sans KR', sans-serif;
-      font-size: 16px; font-weight: 400; outline: none; transition: border-color 0.2s;
+      flex: 1; background: var(--surface2); border: 2px solid var(--border);
+      border-radius: 10px; padding: 12px 16px; color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif; font-size: 15px;
+      outline: none; transition: border-color 0.2s;
     }
     .concept-input:focus { border-color: var(--accent); }
     .concept-input::placeholder { color: var(--text-muted); }
     .search-btn {
-      padding: 14px 28px; background: var(--accent); border: none; border-radius: 10px; color: #fff;
-      font-family: 'Noto Sans KR', sans-serif; font-size: 15px; font-weight: 500;
-      cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: var(--accent); border: none;
+      border-radius: 10px; color: #fff; font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+      white-space: nowrap; display: flex; align-items: center; gap: 8px;
     }
-    .search-btn:hover:not(:disabled) { background: #1b4332; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,106,79,0.3); }
-    .search-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .example-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    .example-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+    .search-btn:hover:not(:disabled) { background: #1b4332; transform: translateY(-1px); }
+    .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .example-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .example-tag {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; font-size: 12px;
+      color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+    }
     .example-tag:hover { background: var(--accent3); border-color: var(--accent3); color: #1b4332; }
-    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .result-section { display: none; flex-direction: column; gap: 16px; animation: fadeUp 0.4s ease; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .root-concept { background: var(--text); border-radius: var(--radius); padding: 20px 24px; display: flex; align-items: center; gap: 14px; }
-    .root-icon { font-size: 24px; }
-    .root-label { font-size: 11px; color: #666; font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; }
-    .root-name { font-size: 22px; font-weight: 700; color: #fff; margin-top: 2px; }
-    .root-summary { font-size: 13px; color: #aaa; margin-top: 4px; }
-    .connector { display: flex; justify-content: center; color: var(--border); font-size: 20px; margin: -4px 0; }
-    .prereq-grid { display: flex; flex-direction: column; gap: 10px; }
-    .prereq-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-      padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px;
-      cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    .spinner {
+      width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: none;
     }
-    .prereq-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
-    .prereq-card:nth-child(1)::before { background: var(--node-1); }
-    .prereq-card:nth-child(2)::before { background: var(--node-2); }
-    .prereq-card:nth-child(3)::before { background: var(--node-3); }
-    .prereq-card:nth-child(4)::before { background: var(--node-4); }
-    .prereq-card:nth-child(5)::before { background: var(--node-5); }
-    .prereq-card:hover { border-color: var(--accent3); box-shadow: 0 4px 16px rgba(45,106,79,0.1); transform: translateX(4px); }
-    .prereq-card.expanded { border-color: var(--accent); background: #f0faf4; }
-    .prereq-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0; margin-top: 1px; }
-    .prereq-card:nth-child(1) .prereq-num { background: var(--node-1); }
-    .prereq-card:nth-child(2) .prereq-num { background: var(--node-2); }
-    .prereq-card:nth-child(3) .prereq-num { background: var(--node-3); }
-    .prereq-card:nth-child(4) .prereq-num { background: var(--node-4); }
-    .prereq-card:nth-child(5) .prereq-num { background: var(--node-5); }
-    .prereq-content { flex: 1; }
-    .prereq-name { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
-    .prereq-level { font-size: 11px; color: var(--text-muted); font-weight: 300; }
-    .prereq-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
-    .prereq-arrow { font-size: 16px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; margin-top: 4px; }
-    .prereq-card.expanded .prereq-arrow { transform: rotate(90deg); }
-    .sub-prereq { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); }
-    .sub-prereq.visible { display: block; }
-    .sub-prereq-label { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-    .sub-prereq-list { display: flex; flex-direction: column; gap: 8px; }
-    .sub-item { background: var(--surface2); border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6; }
-    .sub-item-name { font-weight: 500; margin-bottom: 2px; }
-    .sub-item-desc { color: var(--text-muted); font-size: 12px; }
-    .sub-loading { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); padding: 8px 0; }
-    .sub-spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-    .error-msg { display: none; background: #fff5f5; border: 1px solid #fca5a5; border-radius: var(--radius); padding: 14px 18px; color: #e63946; font-size: 14px; }
-    .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
-    footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; border-top: 1px solid var(--border); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg {
+      display: none; background: #fff5f5; border: 1px solid #fca5a5;
+      border-radius: var(--radius); padding: 12px 16px;
+      color: #e63946; font-size: 13px; max-width: 860px;
+      width: 100%; margin: 12px auto 0;
+    }
+    .hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+    /* 트리 영역 */
+    .tree-container {
+      flex: 1; display: none; padding: 24px;
+      overflow: auto; position: relative;
+      min-height: 500px;
+    }
+    #treeSvg { width: 100%; height: 100%; min-height: 500px; }
+
+    /* D3 노드 스타일 */
+    .node-group { cursor: pointer; }
+    .node-circle {
+      fill: var(--accent); stroke: #fff; stroke-width: 3;
+      transition: all 0.3s; filter: drop-shadow(0 2px 6px rgba(45,106,79,0.3));
+    }
+    .node-circle.root { fill: var(--text); filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3)); }
+    .node-circle.loading { fill: var(--accent2); }
+    .node-circle.expandable:hover { fill: #1b4332; transform: scale(1.1); }
+    .node-circle.leaf { fill: var(--accent3); }
+
+    .node-label {
+      font-family: 'Noto Sans KR', sans-serif; font-weight: 500;
+      fill: var(--text); font-size: 13px;
+    }
+    .node-sublabel {
+      font-family: 'Noto Sans KR', sans-serif; font-weight: 300;
+      fill: var(--text-muted); font-size: 10px;
+    }
+    .node-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 8px;
+      fill: #fff; font-weight: 600;
+    }
+
+    .tree-link {
+      fill: none; stroke: var(--border); stroke-width: 2;
+      stroke-dasharray: 6,4;
+    }
+
+    /* 범례 */
+    .legend {
+      display: none; justify-content: center; gap: 20px;
+      padding: 12px; flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+    /* 선택된 노드 정보 패널 */
+    .info-panel {
+      display: none; max-width: 860px; width: 100%;
+      margin: 0 auto; padding: 0 24px 24px;
+    }
+    .info-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+      animation: fadeUp 0.3s ease;
+    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .info-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .info-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    .info-name { font-size: 16px; font-weight: 700; }
+    .info-level { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .info-desc { font-size: 14px; line-height: 1.7; color: var(--text-muted); margin-bottom: 12px; }
+    .info-hint { font-size: 12px; color: var(--accent); font-weight: 400; }
+
+    footer {
+      text-align: center; padding: 16px; font-size: 11px;
+      color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+      border-top: 1px solid var(--border);
+    }
     footer span { color: var(--accent); font-weight: 600; }
+
     @media (max-width: 480px) {
       .api-row, .concept-input-wrap { flex-direction: column; }
       header { padding: 20px; }
+      .controls { padding: 20px 16px 0; }
     }
   </style>
 </head>
@@ -131,12 +190,11 @@
   <div class="header-icon">🌳</div>
   <div>
     <div class="header-title">수학 개념 <span>트리 탐색기</span></div>
-    <div class="header-sub">westkong · math-concept-tree · powered by claude api</div>
+    <div class="header-sub">westkong · math-concept-tree v2 · powered by claude api</div>
   </div>
 </header>
 
-<main>
-
+<div class="controls">
   <div class="card">
     <div class="card-label">Claude API Key</div>
     <div class="api-row">
@@ -168,48 +226,50 @@
       <span class="example-tag" onclick="setExample('등차수열')">등차수열</span>
     </div>
   </div>
+</div>
 
-  <div class="error-msg" id="errorMsg"></div>
+<div class="error-msg" id="errorMsg"></div>
 
-  <div class="result-section" id="resultSection">
-    <div class="root-concept">
-      <div class="root-icon">🎯</div>
-      <div>
-        <div class="root-label">목표 개념</div>
-        <div class="root-name" id="rootName"></div>
-        <div class="root-summary" id="rootSummary"></div>
-      </div>
+<div class="legend" id="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--text)"></div>목표 개념</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>선수개념 (클릭하여 확장)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent3)"></div>하위 선수개념</div>
+</div>
+
+<div class="tree-container" id="treeContainer">
+  <svg id="treeSvg"></svg>
+</div>
+
+<div class="info-panel" id="infoPanel">
+  <div class="info-card">
+    <div class="info-header">
+      <div class="info-dot" id="infoDot"></div>
+      <div class="info-name" id="infoName"></div>
+      <div class="info-level" id="infoLevel"></div>
     </div>
-    <div class="connector">↓</div>
-    <div class="prereq-grid" id="prereqGrid"></div>
+    <div class="info-desc" id="infoDesc"></div>
+    <div class="info-hint" id="infoHint"></div>
   </div>
+</div>
 
-</main>
-
-<footer>Built by <span>westkong</span> · Math Concept Tree · Powered by Claude API</footer>
+<footer>Built by <span>westkong</span> · Math Concept Tree v2 · Powered by Claude API</footer>
 
 <script>
+  // ─── 기본 UI ───
   function toggleKey() {
     const input = document.getElementById('apiKey');
     input.type = input.type === 'password' ? 'text' : 'password';
   }
-
   document.getElementById('apiKey').addEventListener('input', function() {
     const s = document.getElementById('apiStatus');
     if (this.value.startsWith('sk-ant-')) { s.textContent = '✓ 입력됨'; s.className = 'api-status ok'; }
     else if (this.value.length > 0) { s.textContent = '형식 오류'; s.className = 'api-status err'; }
     else { s.textContent = '미입력'; s.className = 'api-status'; }
   });
+  function setExample(c) { document.getElementById('conceptInput').value = c; document.getElementById('conceptInput').focus(); }
+  document.getElementById('conceptInput').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
 
-  function setExample(c) {
-    document.getElementById('conceptInput').value = c;
-    document.getElementById('conceptInput').focus();
-  }
-
-  document.getElementById('conceptInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') search();
-  });
-
+  // ─── API 호출 ───
   async function callClaude(apiKey, prompt) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -232,6 +292,10 @@
     return (await res.json()).content[0].text.trim();
   }
 
+  // ─── 트리 데이터 ───
+  let treeData = null;
+  let selectedNode = null;
+
   async function search() {
     const apiKey = document.getElementById('apiKey').value.trim();
     const concept = document.getElementById('conceptInput').value.trim();
@@ -243,29 +307,37 @@
     const btnText = document.getElementById('btnText');
     btn.disabled = true; spinner.style.display = 'block'; btnText.textContent = '분석 중...';
     document.getElementById('errorMsg').style.display = 'none';
-    document.getElementById('resultSection').style.display = 'none';
 
     try {
       const prompt = `당신은 한국 고등학교 수학 교육과정 전문가입니다.
-
 "${concept}" 개념을 이해하기 위해 반드시 먼저 알아야 할 선수개념 5가지를 중요도 순으로 분석해주세요.
-
 반드시 아래 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요:
 {
   "concept": "${concept}",
   "summary": "${concept}이(가) 무엇인지 한 줄 설명",
   "prerequisites": [
-    {
-      "name": "선수개념 이름",
-      "desc": "이 개념이 왜 필요한지 1~2문장 설명",
-      "level": "중1~고3 중 해당 학년"
-    }
+    { "name": "선수개념 이름", "desc": "이 개념이 왜 필요한지 1~2문장 설명", "level": "중1~고3 중 해당 학년" }
   ]
 }`;
 
       const raw = await callClaude(apiKey, prompt);
       const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      renderResult(data);
+
+      treeData = {
+        name: data.concept,
+        summary: data.summary,
+        level: '목표',
+        isRoot: true,
+        children: data.prerequisites.map(p => ({
+          name: p.name,
+          desc: p.desc,
+          level: p.level,
+          _children: null,
+          expanded: false
+        }))
+      };
+
+      renderTree();
 
     } catch (err) {
       showError('오류: ' + err.message);
@@ -274,70 +346,181 @@
     }
   }
 
-  function renderResult(data) {
-    document.getElementById('rootName').textContent = data.concept;
-    document.getElementById('rootSummary').textContent = data.summary;
-    const grid = document.getElementById('prereqGrid');
-    grid.innerHTML = '';
+  // ─── D3 트리 렌더링 ───
+  function renderTree() {
+    const container = document.getElementById('treeContainer');
+    const legend = document.getElementById('legend');
+    container.style.display = 'block';
+    legend.style.display = 'flex';
 
-    data.prerequisites.forEach((p, i) => {
-      const card = document.createElement('div');
-      card.className = 'prereq-card';
-      card.innerHTML = `
-        <div class="prereq-num">${i + 1}</div>
-        <div class="prereq-content">
-          <div class="prereq-name">${p.name} <span class="prereq-level">${p.level}</span></div>
-          <div class="prereq-desc">${p.desc}</div>
-          <div class="sub-prereq" id="sub-${i}">
-            <div class="sub-prereq-label">이 개념의 선수개념</div>
-            <div class="sub-prereq-list" id="subList-${i}"></div>
-          </div>
-        </div>
-        <div class="prereq-arrow">›</div>
-      `;
-      card.addEventListener('click', () => toggleSub(i, p.name, card));
-      grid.appendChild(card);
-    });
+    const svg = d3.select('#treeSvg');
+    svg.selectAll('*').remove();
 
-    document.getElementById('resultSection').style.display = 'flex';
+    const containerRect = container.getBoundingClientRect();
+    const width = Math.max(containerRect.width, 700);
+    const height = Math.max(500, (countNodes(treeData)) * 55 + 100);
+
+    svg.attr('width', width).attr('height', height);
+
+    const g = svg.append('g').attr('transform', `translate(180, 40)`);
+
+    const root = d3.hierarchy(treeData);
+    const treeLayout = d3.tree().size([height - 80, width - 380]);
+    treeLayout(root);
+
+    // 링크
+    g.selectAll('.tree-link')
+      .data(root.links())
+      .join('path')
+      .attr('class', 'tree-link')
+      .attr('d', d3.linkHorizontal().x(d => d.y).y(d => d.x))
+      .style('opacity', 0)
+      .transition().duration(600).delay((d, i) => i * 80)
+      .style('opacity', 1);
+
+    // 노드 그룹
+    const nodes = g.selectAll('.node-group')
+      .data(root.descendants())
+      .join('g')
+      .attr('class', 'node-group')
+      .attr('transform', d => `translate(${d.y}, ${d.x})`)
+      .style('opacity', 0)
+      .on('click', (event, d) => onNodeClick(event, d));
+
+    nodes.transition().duration(500).delay((d, i) => i * 100).style('opacity', 1);
+
+    // 원
+    nodes.append('circle')
+      .attr('class', d => {
+        if (d.data.isRoot) return 'node-circle root';
+        if (d.data._children === null && !d.data.expanded) return 'node-circle expandable';
+        return 'node-circle leaf';
+      })
+      .attr('r', d => d.data.isRoot ? 22 : (d.depth === 1 ? 16 : 12))
+      .on('mouseover', function(event, d) {
+        if (!d.data.isRoot && !d.data.expanded) {
+          d3.select(this).transition().duration(200).attr('r', d.depth === 1 ? 20 : 15);
+        }
+      })
+      .on('mouseout', function(event, d) {
+        d3.select(this).transition().duration(200).attr('r', d.data.isRoot ? 22 : (d.depth === 1 ? 16 : 12));
+      });
+
+    // 노드 순서 번호 (1단계)
+    nodes.filter(d => d.depth === 1)
+      .append('text')
+      .attr('class', 'node-badge')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .text((d, i) => i + 1);
+
+    // 루트 아이콘
+    nodes.filter(d => d.data.isRoot)
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .style('font-size', '16px')
+      .text('🎯');
+
+    // 라벨
+    nodes.append('text')
+      .attr('class', 'node-label')
+      .attr('dy', '-0.2em')
+      .attr('x', d => d.data.isRoot ? 32 : (d.children ? -24 : 24))
+      .attr('text-anchor', d => d.data.isRoot ? 'start' : (d.children ? 'end' : 'start'))
+      .text(d => d.data.name);
+
+    // 서브 라벨 (학년)
+    nodes.filter(d => d.data.level && d.data.level !== '목표')
+      .append('text')
+      .attr('class', 'node-sublabel')
+      .attr('dy', '1.2em')
+      .attr('x', d => d.children ? -24 : 24)
+      .attr('text-anchor', d => d.children ? 'end' : 'start')
+      .text(d => d.data.level);
+
+    // 확장 가능 표시 (+)
+    nodes.filter(d => d.depth === 1 && !d.data.expanded)
+      .append('text')
+      .attr('class', 'expand-hint')
+      .attr('dy', '0.35em')
+      .attr('x', d => d.children ? -40 : 40)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '10px')
+      .style('fill', 'var(--accent2)')
+      .style('font-family', 'JetBrains Mono, monospace')
+      .text('+ 클릭');
+
+    // SVG 높이 조정
+    const bounds = g.node().getBBox();
+    svg.attr('height', Math.max(500, bounds.height + 100));
   }
 
-  async function toggleSub(idx, name, card) {
-    const subEl = document.getElementById(`sub-${idx}`);
-    const subList = document.getElementById(`subList-${idx}`);
+  function countNodes(data) {
+    let count = 1;
+    if (data.children) data.children.forEach(c => { count += countNodes(c); });
+    return count;
+  }
 
-    if (card.classList.contains('expanded')) {
-      card.classList.remove('expanded');
-      subEl.classList.remove('visible');
-      return;
-    }
+  // ─── 노드 클릭 ───
+  async function onNodeClick(event, d) {
+    event.stopPropagation();
 
-    card.classList.add('expanded');
-    subEl.classList.add('visible');
-    if (subList.dataset.loaded) return;
+    // 정보 패널 표시
+    showInfoPanel(d.data);
 
+    // 루트면 무시
+    if (d.data.isRoot) return;
+
+    // 이미 확장됐으면 무시
+    if (d.data.expanded) return;
+
+    // 하위 선수개념 로드
     const apiKey = document.getElementById('apiKey').value.trim();
-    subList.innerHTML = '<div class="sub-loading"><div class="sub-spinner"></div>분석 중...</div>';
+    if (!apiKey.startsWith('sk-ant-')) return;
+
+    d.data.expanded = true;
 
     try {
       const prompt = `당신은 한국 고등학교 수학 교육과정 전문가입니다.
-"${name}" 개념의 선수개념 3가지를 알려주세요.
+"${d.data.name}" 개념의 선수개념 3가지를 알려주세요.
 반드시 아래 JSON 형식으로만 응답하세요:
-{"prerequisites":[{"name":"개념 이름","desc":"한 줄 설명"}]}`;
+{"prerequisites":[{"name":"개념 이름","desc":"한 줄 설명","level":"학년"}]}`;
 
       const raw = await callClaude(apiKey, prompt);
       const data = JSON.parse(raw.replace(/```json|```/g, '').trim());
 
-      subList.innerHTML = data.prerequisites.map(p => `
-        <div class="sub-item">
-          <div class="sub-item-name">📌 ${p.name}</div>
-          <div class="sub-item-desc">${p.desc}</div>
-        </div>
-      `).join('');
-      subList.dataset.loaded = 'true';
+      d.data.children = data.prerequisites.map(p => ({
+        name: p.name,
+        desc: p.desc,
+        level: p.level || '',
+        expanded: true
+      }));
 
-    } catch {
-      subList.innerHTML = '<div class="sub-item" style="color:#e63946">불러오기 실패. 다시 시도해주세요.</div>';
+      renderTree();
+
+    } catch (err) {
+      d.data.expanded = false;
+      showError('하위 개념 불러오기 실패: ' + err.message);
+    }
+  }
+
+  // ─── 정보 패널 ───
+  function showInfoPanel(data) {
+    const panel = document.getElementById('infoPanel');
+    const dot = document.getElementById('infoDot');
+    panel.style.display = 'block';
+
+    document.getElementById('infoName').textContent = data.name;
+    document.getElementById('infoLevel').textContent = data.level || '';
+    document.getElementById('infoDesc').textContent = data.desc || data.summary || '';
+
+    if (data.isRoot) {
+      dot.style.background = 'var(--text)';
+      document.getElementById('infoHint').textContent = '아래 선수개념 노드를 클릭하여 탐색하세요';
+    } else if (!data.expanded || data.children) {
+      dot.style.background = data.children ? 'var(--accent3)' : 'var(--accent)';
+      document.getElementById('infoHint').textContent = data.children ? '' : '이 노드를 클릭하면 하위 선수개념이 펼쳐져요';
     }
   }
 
