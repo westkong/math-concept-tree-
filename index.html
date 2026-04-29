@@ -177,11 +177,12 @@
       padding: 14px 16px;
     }
     .info-formula {
-      font-size: 15px; line-height: 2;
+      font-size: 16px; line-height: 2.2;
       background: var(--text); color: #e8e6e0;
-      border-radius: 8px; padding: 16px 20px;
-      font-family: 'JetBrains Mono', monospace;
+      border-radius: 8px; padding: 20px 24px;
+      overflow-x: auto;
     }
+    .info-formula .MathJax { color: #e8e6e0 !important; }
     .info-example {
       font-size: 13px; line-height: 1.8; color: var(--text);
       background: #f0faf4; border: 1px solid var(--accent3);
@@ -530,7 +531,7 @@
 반드시 아래 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요:
 {
   "definition": "이 개념이 뭔지 쉽게 2~3문장으로 설명",
-  "formula": "핵심 공식 또는 표현 (LaTeX 형식, 없으면 빈 문자열)",
+  "formula": "핵심 공식 (반드시 $$...$$ 로 감싼 LaTeX 형식, 여러 공식은 줄바꿈으로 구분, 공식 없으면 빈 문자열)",
   "example": "구체적인 예시 1개 (문제와 풀이 간단하게)",
   "tip": "학생들이 자주 헷갈리는 포인트 1가지"
 }`;
@@ -559,10 +560,15 @@
 
     let formulaHTML = '';
     if (detail.formula) {
+      let f = detail.formula.trim();
+      // LaTeX 감싸기 안 되어 있으면 자동으로 감싸기
+      if (!f.startsWith('$') && !f.startsWith('\\(') && !f.startsWith('\\[')) {
+        f = '$$' + f + '$$';
+      }
       formulaHTML = `
         <div class="info-section">
           <div class="info-section-label">📐 핵심 공식</div>
-          <div class="info-formula">${detail.formula}</div>
+          <div class="info-formula">${f}</div>
         </div>
       `;
     }
