@@ -202,6 +202,65 @@
       font-size: 13px; color: var(--accent); margin-top: 12px;
     }
 
+    /* 진단 문제 */
+    .quiz-section {
+      margin-top: 20px; padding-top: 20px;
+      border-top: 2px solid var(--accent3);
+    }
+    .quiz-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: var(--accent); letter-spacing: 2px;
+      text-transform: uppercase; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .quiz-question {
+      font-size: 15px; line-height: 1.8; font-weight: 400;
+      background: #fffbeb; border: 1px solid #fcd34d;
+      border-radius: 8px; padding: 16px;
+      margin-bottom: 12px;
+    }
+    .quiz-input-wrap {
+      display: flex; gap: 10px; align-items: stretch;
+    }
+    .quiz-input {
+      flex: 1; background: var(--surface2);
+      border: 2px solid var(--border); border-radius: 8px;
+      padding: 12px 14px; color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .quiz-input:focus { border-color: var(--accent); }
+    .quiz-input::placeholder { color: var(--text-muted); }
+    .quiz-submit {
+      padding: 12px 20px; background: var(--accent); border: none;
+      border-radius: 8px; color: #fff; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+      font-family: 'Noto Sans KR', sans-serif;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .quiz-submit:hover:not(:disabled) { background: #1b4332; }
+    .quiz-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+    .quiz-spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: none;
+    }
+    .quiz-result {
+      display: none; margin-top: 12px;
+      border-radius: 8px; padding: 16px;
+      font-size: 14px; line-height: 1.8;
+      animation: fadeUp 0.3s ease;
+    }
+    .quiz-result.correct {
+      background: #f0faf4; border: 1px solid var(--accent3); color: var(--accent);
+    }
+    .quiz-result.incorrect {
+      background: #fff5f5; border: 1px solid #fca5a5; color: #b91c1c;
+    }
+    .quiz-result-label {
+      font-weight: 700; font-size: 15px; margin-bottom: 6px;
+    }
+
     footer {
       text-align: center; padding: 16px; font-size: 11px;
       color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
@@ -533,7 +592,9 @@
   "definition": "이 개념이 뭔지 쉽게 2~3문장으로 설명",
   "formula": "핵심 공식 (반드시 $$...$$ 로 감싼 LaTeX 형식, 여러 공식은 줄바꿈으로 구분, 공식 없으면 빈 문자열)",
   "example": "구체적인 예시 1개 (문제와 풀이 간단하게)",
-  "tip": "학생들이 자주 헷갈리는 포인트 1가지"
+  "tip": "학생들이 자주 헷갈리는 포인트 1가지",
+  "quiz": "이 개념을 이해했는지 확인할 수 있는 간단한 문제 1개 (객관식X, 단답형으로)",
+  "quiz_answer": "정답 (짧게)"
 }`;
 
       const raw = await callClaude(apiKey, prompt);
@@ -561,7 +622,6 @@
     let formulaHTML = '';
     if (detail.formula) {
       let f = detail.formula.trim();
-      // LaTeX 감싸기 안 되어 있으면 자동으로 감싸기
       if (!f.startsWith('$') && !f.startsWith('\\(') && !f.startsWith('\\[')) {
         f = '$$' + f + '$$';
       }
@@ -569,6 +629,25 @@
         <div class="info-section">
           <div class="info-section-label">📐 핵심 공식</div>
           <div class="info-formula">${f}</div>
+        </div>
+      `;
+    }
+
+    let quizHTML = '';
+    if (detail.quiz) {
+      const qid = 'quiz-' + data.name.replace(/\s/g, '-');
+      quizHTML = `
+        <div class="quiz-section">
+          <div class="quiz-label">🧪 이해도 진단</div>
+          <div class="quiz-question" id="${qid}-q">${detail.quiz}</div>
+          <div class="quiz-input-wrap">
+            <input type="text" class="quiz-input" id="${qid}-input" placeholder="답을 입력하세요" />
+            <button class="quiz-submit" id="${qid}-btn" onclick="checkAnswer('${data.name.replace(/'/g, "\\'")}', '${qid}')">
+              <div class="quiz-spinner" id="${qid}-spinner"></div>
+              <span id="${qid}-btnText">채점하기</span>
+            </button>
+          </div>
+          <div class="quiz-result" id="${qid}-result"></div>
         </div>
       `;
     }
@@ -594,16 +673,78 @@
           <div class="info-section-content">${detail.tip}</div>
         </div>
       </div>
+      ${quizHTML}
       ${!data.expanded && !data.isRoot ? '<div class="info-click-hint">↑ 트리의 이 노드를 클릭하면 하위 선수개념이 펼쳐져요</div>' : ''}
     `;
 
-    // MathJax 렌더링
+    // 엔터키로 채점
+    if (detail.quiz) {
+      const qid = 'quiz-' + data.name.replace(/\s/g, '-');
+      const inputEl = document.getElementById(`${qid}-input`);
+      if (inputEl) {
+        inputEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') checkAnswer(data.name, qid);
+        });
+      }
+    }
+
     if (window.MathJax) {
       MathJax.typesetPromise([card]).catch(err => console.error('MathJax:', err));
     }
 
-    // 패널로 스크롤
     document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ─── 진단 문제 채점 ───
+  async function checkAnswer(conceptName, qid) {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const input = document.getElementById(`${qid}-input`);
+    const btn = document.getElementById(`${qid}-btn`);
+    const spinner = document.getElementById(`${qid}-spinner`);
+    const btnText = document.getElementById(`${qid}-btnText`);
+    const resultEl = document.getElementById(`${qid}-result`);
+    const question = document.getElementById(`${qid}-q`).textContent;
+    const answer = input.value.trim();
+
+    if (!answer) { input.focus(); return; }
+    if (!apiKey.startsWith('sk-ant-')) return;
+
+    btn.disabled = true; spinner.style.display = 'block'; btnText.textContent = '채점 중...';
+
+    try {
+      const prompt = `당신은 수학 채점 전문가입니다.
+
+개념: ${conceptName}
+문제: ${question}
+학생 답: ${answer}
+
+학생의 답이 맞는지 판단하고 아래 JSON 형식으로만 응답하세요:
+{
+  "correct": true 또는 false,
+  "feedback": "맞으면 칭찬 + 핵심 포인트 한 줄, 틀리면 왜 틀렸는지 + 올바른 풀이 간단히 2~3문장"
+}`;
+
+      const raw = await callClaude(apiKey, prompt);
+      const result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      resultEl.className = 'quiz-result ' + (result.correct ? 'correct' : 'incorrect');
+      resultEl.innerHTML = `
+        <div class="quiz-result-label">${result.correct ? '✅ 정답입니다!' : '❌ 아쉬워요!'}</div>
+        <div>${result.feedback}</div>
+      `;
+      resultEl.style.display = 'block';
+
+      if (window.MathJax) {
+        MathJax.typesetPromise([resultEl]).catch(() => {});
+      }
+
+    } catch (err) {
+      resultEl.className = 'quiz-result incorrect';
+      resultEl.innerHTML = '<div>채점 중 오류가 발생했어요. 다시 시도해주세요.</div>';
+      resultEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = '채점하기';
+    }
   }
 
   function showError(msg) {
